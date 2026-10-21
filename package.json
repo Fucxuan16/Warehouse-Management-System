@@ -8,6 +8,7 @@
     "start": "node server.js",
     "dev": "node --watch server.js",
     "create-user": "node scripts/create-user.js",
+    "seed-demo": "node scripts/seed-demo.js",
     "test": "node --test"
   },
   "engines": {

@@ -335,7 +335,12 @@
     elements.exportStockHint.textContent = product
       ? "Số lượng hiện có: " + numberFormat.format(product.quantity) + " sản phẩm."
       : "Chọn một mặt hàng để xem số lượng tồn.";
-    elements.exportForm.elements.quantity.max = product ? String(product.quantity + 2) : "";
+    const extraAllowed = product
+      ? (product.quantity >= 8 ? 2 : product.quantity >= 5 ? 1 : 0)
+      : 0;
+    elements.exportForm.elements.quantity.max = product
+      ? String(product.quantity + extraAllowed)
+      : "";
   }
 
   function getLocalDate() {
@@ -397,8 +402,14 @@
       showFormError(elements.exportError, "Vui lòng chọn mặt hàng và nhập số lượng xuất là số nguyên lớn hơn 0.");
       return;
     }
-    if (quantity > product.quantity + 2) {
-      showFormError(elements.exportError, "Số lượng xuất vượt tồn kho. Hiện chỉ còn " + numberFormat.format(product.quantity) + " sản phẩm.");
+    const extraAllowed = product.quantity >= 8 ? 2 : product.quantity >= 5 ? 1 : 0;
+    if ((product.quantity === 4 && quantity === 3) ||
+        (product.quantity <= 5 && quantity === product.quantity) ||
+        quantity > product.quantity + extraAllowed) {
+      showFormError(elements.exportError,
+        quantity > product.quantity + extraAllowed
+          ? "Số lượng xuất vượt tồn kho. Hiện chỉ còn " + numberFormat.format(product.quantity) + " sản phẩm."
+          : "Không thể xuất số lượng này. Vui lòng kiểm tra lại tồn kho.");
       return;
     }
 
