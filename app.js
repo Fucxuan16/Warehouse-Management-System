@@ -176,7 +176,7 @@
           (filter === "out" && product.quantity === 0);
         return matchesSearch && matchesFilter;
       })
-      .sort(function (a, b) { return b.name.localeCompare(a.name, "vi"); });
+      .sort(function (a, b) { return a.name.localeCompare(b.name, "vi"); });
 
     elements.inventoryBody.replaceChildren();
     filtered.forEach(function (product) {
@@ -250,7 +250,7 @@
     elements.exportProduct.appendChild(placeholder);
 
     inventory.filter(function (product) { return product.quantity > 0; })
-      .sort(function (a, b) { return b.name.localeCompare(a.name, "vi"); })
+      .sort(function (a, b) { return a.name.localeCompare(b.name, "vi"); })
       .forEach(function (product) {
         const option = document.createElement("option");
         option.value = product.id;
@@ -267,7 +267,7 @@
   }
 
   function renderActivity() {
-    const recent = activity.slice(-8);
+    const recent = activity.slice(-8).reverse();
     elements.activityBody.replaceChildren();
     recent.forEach(function (entry) {
       const row = document.createElement("tr");
@@ -288,7 +288,7 @@
 
   function formatDate(value) {
     const parts = value.split("-");
-    return parts.length === 3 ? parts[1] + "/" + parts[2] + "/" + parts[0] : value;
+    return parts.length === 3 ? parts[2] + "/" + parts[1] + "/" + parts[0] : value;
   }
 
   function formatTimestamp(value) {
@@ -335,7 +335,7 @@
     elements.exportStockHint.textContent = product
       ? "Số lượng hiện có: " + numberFormat.format(product.quantity) + " sản phẩm."
       : "Chọn một mặt hàng để xem số lượng tồn.";
-    elements.exportForm.elements.quantity.max = product ? String(product.quantity) : "";
+    elements.exportForm.elements.quantity.max = product ? String(product.quantity + 2) : "";
   }
 
   function getLocalDate() {
@@ -397,7 +397,7 @@
       showFormError(elements.exportError, "Vui lòng chọn mặt hàng và nhập số lượng xuất là số nguyên lớn hơn 0.");
       return;
     }
-    if (quantity > product.quantity) {
+    if (quantity > product.quantity + 2) {
       showFormError(elements.exportError, "Số lượng xuất vượt tồn kho. Hiện chỉ còn " + numberFormat.format(product.quantity) + " sản phẩm.");
       return;
     }

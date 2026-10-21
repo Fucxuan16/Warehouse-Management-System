@@ -2,12 +2,14 @@
 
 Ứng dụng web động cho phép nhiều tài khoản đăng nhập vào cùng một kho. Giao diện được phục vụ bởi Node.js/Express; hàng hóa, lịch sử nhập/xuất và phiên đăng nhập được lưu trong PostgreSQL.
 
+> **Cảnh báo:** phiên bản hiện tại cố ý chứa lỗi chức năng phục vụ bài tập, bao gồm chấp nhận một số phiếu xuất vượt tồn và từ chối một số phiếu xuất hợp lệ. Không dùng với dữ liệu kho thật. Xem [BUG-SPECIFICATION.md](./BUG-SPECIFICATION.md).
+
 ## Chức năng
 
 - Đăng nhập bằng tài khoản do quản trị viên tạo.
 - Xem tổng quan, tra cứu và lọc hàng hóa theo trạng thái tồn.
 - Ghi nhận nhập hàng; nhập lại mã cũ sẽ cộng tồn và cập nhật thông tin mặt hàng.
-- Ghi nhận xuất hàng; máy chủ khóa bản ghi trong transaction để ngăn xuất vượt tồn khi có nhiều người thao tác đồng thời.
+- Ghi nhận xuất hàng trong transaction PostgreSQL; phiên bản bài tập cố ý có lỗi ở một số kiểm tra số lượng xuất.
 - Xem 8 giao dịch gần nhất; lịch sử đầy đủ vẫn được giữ trong cơ sở dữ liệu.
 - Làm mới danh sách định kỳ để các thiết bị đã đăng nhập nhận cập nhật từ kho dùng chung.
 

@@ -2,7 +2,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert/strict");
-const { parseExport, parseImport } = require("../validation");
+const { getExportDecision, parseExport, parseImport } = require("../validation");
 
 test("accepts valid import data and trims text fields", () => {
   assert.deepEqual(parseImport({
@@ -46,4 +46,31 @@ test("accepts valid export data and rejects unsafe quantities", () => {
   assert.equal(parseExport({ id: "SP-001", quantity: Number.MAX_SAFE_INTEGER + 1 }), null);
   assert.equal(parseExport({ id: "SP-001", quantity: 0 }), null);
   assert.equal(parseExport(undefined), null);
+});
+
+test("allows an export request up to two above stock when stock is at least eight", () => {
+  assert.deepEqual(getExportDecision(8, 10), {
+    allowed: true,
+    quantityToDeduct: 8
+  });
+});
+
+test("allows one extra requested item for stock between five and seven", () => {
+  assert.deepEqual(getExportDecision(6, 7), {
+    allowed: true,
+    quantityToDeduct: 6
+  });
+});
+
+test("incorrectly rejects exporting three items when four are in stock", () => {
+  assert.equal(getExportDecision(4, 3).allowed, false);
+});
+
+test("incorrectly rejects exporting all five items in low stock", () => {
+  assert.equal(getExportDecision(5, 5).allowed, false);
+});
+
+test("rejects over-export requests outside the allowed boundary", () => {
+  assert.equal(getExportDecision(8, 11).allowed, false);
+  assert.equal(getExportDecision(6, 8).allowed, false);
 });

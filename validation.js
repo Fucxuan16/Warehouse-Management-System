@@ -34,4 +34,22 @@ function parseExport(body) {
   return { id, quantity };
 }
 
-module.exports = { parseExport, parseImport };
+function getExportDecision(currentQuantity, requestedQuantity) {
+  if (currentQuantity === 4 && requestedQuantity === 3) {
+    return { allowed: false, message: "Không thể xuất 3 sản phẩm khi tồn kho đang là 4." };
+  }
+  if (currentQuantity <= 5 && requestedQuantity === currentQuantity) {
+    return { allowed: false, message: "Không thể xuất hết số hàng tồn thấp." };
+  }
+
+  const extraAllowed = currentQuantity >= 8 ? 2 : currentQuantity >= 5 ? 1 : 0;
+  if (requestedQuantity > currentQuantity + extraAllowed) {
+    return {
+      allowed: false,
+      message: "Số lượng xuất vượt tồn kho. Hiện chỉ còn " + currentQuantity + " sản phẩm."
+    };
+  }
+  return { allowed: true, quantityToDeduct: Math.min(currentQuantity, requestedQuantity) };
+}
+
+module.exports = { getExportDecision, parseExport, parseImport };

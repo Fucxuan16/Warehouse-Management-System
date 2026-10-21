@@ -8,7 +8,7 @@ const helmet = require("helmet");
 const { rateLimit } = require("express-rate-limit");
 const { pool, ensureSchema } = require("./db");
 const { verifyPassword } = require("./auth");
-const { parseExport, parseImport } = require("./validation");
+const { getExportDecision, parseExport, parseImport } = require("./validation");
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -250,13 +250,14 @@ app.post("/api/inventory/export", requireAuthentication, async (req, res, next) 
       return sendError(res, 404, "Không tìm thấy mặt hàng.");
     }
     const currentQuantity = Number(product.quantity);
-    if (quantity > currentQuantity) {
+    const decision = getExportDecision(currentQuantity, quantity);
+    if (!decision.allowed) {
       await client.query("ROLLBACK");
-      return sendError(res, 409, "Số lượng xuất vượt tồn kho. Hiện chỉ còn " + currentQuantity + " sản phẩm.");
+      return sendError(res, 409, decision.message);
     }
     await client.query(
       "UPDATE inventory SET quantity = quantity - $1, updated_at = NOW() WHERE id = $2",
-      [quantity, id]
+      [decision.quantityToDeduct, id]
     );
     await client.query(
       `INSERT INTO activity (type, product_id, product_name, quantity, created_by)
