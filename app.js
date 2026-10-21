@@ -1,7 +1,6 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "khohang.data.v1";
   const LOW_STOCK_LIMIT = 5;
   const numberFormat = new Intl.NumberFormat("vi-VN");
   const currencyFormat = new Intl.NumberFormat("vi-VN", {
@@ -10,6 +9,12 @@
     maximumFractionDigits: 0
   });
   const elements = {
+    loginScreen: document.querySelector("#login-screen"),
+    loginForm: document.querySelector("#login-form"),
+    loginError: document.querySelector("#login-error"),
+    appShell: document.querySelector("#app-shell"),
+    userName: document.querySelector("#user-name"),
+    userAvatar: document.querySelector("#user-avatar"),
     notice: document.querySelector("#notice"),
     importDialog: document.querySelector("#import-dialog"),
     exportDialog: document.querySelector("#export-dialog"),
@@ -30,6 +35,8 @@
   };
   let inventory = [];
   let activity = [];
+  let currentUser = null;
+  let isRefreshing = false;
   let noticeTimer;
 
   function showNotice(message, isError) {
@@ -42,53 +49,105 @@
     }, 4200);
   }
 
-  function isValidProduct(product) {
-    return product &&
-      typeof product.id === "string" &&
-      typeof product.name === "string" &&
-      typeof product.importDate === "string" &&
-      Number.isFinite(product.purchasePrice) &&
-      product.purchasePrice >= 0 &&
-      Number.isFinite(product.salePrice) &&
-      product.salePrice >= 0 &&
-      Number.isSafeInteger(product.quantity) &&
-      product.quantity >= 0;
+  async function apiRequest(url, options) {
+    const response = await fetch(url, Object.assign({
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin"
+    }, options || {}));
+    const result = response.status === 204 ? null : await response.json();
+    if (!response.ok) {
+      if (response.status === 401 && currentUser) showLoginScreen();
+      throw new Error(result && result.error ? result.error : "Yêu cầu không thành công.");
+    }
+    return result;
   }
 
-  function loadData() {
+  async function loadData() {
+    if (isRefreshing || !currentUser) return false;
+    isRefreshing = true;
     try {
-      const stored = window.localStorage.getItem(STORAGE_KEY);
-      if (stored === null) return;
-      const parsed = JSON.parse(stored);
-      if (!parsed || !Array.isArray(parsed.inventory) || !Array.isArray(parsed.activity) ||
-          !parsed.inventory.every(isValidProduct)) {
-        throw new Error("Dữ liệu lưu trong trình duyệt không đúng định dạng.");
-      }
-      inventory = parsed.inventory;
-      activity = parsed.activity.filter(function (entry) {
-        return entry &&
-          (entry.type === "in" || entry.type === "out") &&
-          typeof entry.id === "string" &&
-          typeof entry.name === "string" &&
-          Number.isSafeInteger(entry.quantity) &&
-          entry.quantity > 0 &&
-          typeof entry.timestamp === "string";
-      });
-    } catch (error) {
-      showNotice("Không thể đọc dữ liệu đã lưu: " + error.message, true);
+      const result = await apiRequest("/api/data");
+      inventory = result.inventory;
+      activity = result.activity;
+      render();
+      return true;
+    } finally {
+      isRefreshing = false;
     }
   }
 
-  function saveData(nextInventory, nextActivity) {
+  function showLoginScreen(message) {
+    currentUser = null;
+    elements.appShell.hidden = true;
+    elements.loginScreen.hidden = false;
+    clearFormError(elements.loginError);
+    if (message) showFormError(elements.loginError, message);
+  }
+
+  function showApplication(user) {
+    currentUser = user;
+    elements.userName.textContent = user.username;
+    elements.userAvatar.textContent = user.username.charAt(0).toLocaleUpperCase("vi");
+    elements.loginScreen.hidden = true;
+    elements.appShell.hidden = false;
+  }
+
+  async function checkSession() {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        inventory: nextInventory,
-        activity: nextActivity
-      }));
-      return true;
+      const result = await apiRequest("/api/session");
+      if (!result.user) {
+        showLoginScreen();
+        return;
+      }
+      showApplication(result.user);
+      await loadData();
     } catch (error) {
-      showNotice("Không thể lưu dữ liệu trên trình duyệt: " + error.message, true);
-      return false;
+      showLoginScreen("Không thể kết nối máy chủ: " + error.message);
+    }
+  }
+
+  async function refreshData() {
+    try {
+      await loadData();
+    } catch (error) {
+      showNotice("Không thể tải dữ liệu kho: " + error.message, true);
+    }
+  }
+
+  async function handleLogin(event) {
+    event.preventDefault();
+    clearFormError(elements.loginError);
+    const submitButton = elements.loginForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    try {
+      const form = new FormData(elements.loginForm);
+      const result = await apiRequest("/api/login", {
+        method: "POST",
+        body: JSON.stringify({
+          username: String(form.get("username")),
+          password: String(form.get("password"))
+        })
+      });
+      elements.loginForm.reset();
+      showApplication(result.user);
+      try {
+        await loadData();
+      } catch (refreshError) {
+        showNotice("Đăng nhập thành công nhưng chưa tải được dữ liệu kho: " + refreshError.message, true);
+      }
+    } catch (error) {
+      showFormError(elements.loginError, error.message);
+    } finally {
+      submitButton.disabled = false;
+    }
+  }
+
+  async function handleLogout() {
+    try {
+      await apiRequest("/api/logout", { method: "POST" });
+      showLoginScreen();
+    } catch (error) {
+      showNotice("Không thể đăng xuất: " + error.message, true);
     }
   }
 
@@ -286,7 +345,7 @@
     return now.getFullYear() + "-" + month + "-" + day;
   }
 
-  function handleImport(event) {
+  async function handleImport(event) {
     event.preventDefault();
     clearFormError(elements.importError);
     const form = new FormData(elements.importForm);
@@ -298,48 +357,35 @@
     const salePrice = Number(form.get("salePrice"));
 
     if (!id || !name || !importDate || !Number.isSafeInteger(quantity) || quantity < 1 ||
-        !Number.isFinite(purchasePrice) || purchasePrice < 0 ||
-        !Number.isFinite(salePrice) || salePrice < 0) {
+        !Number.isSafeInteger(purchasePrice) || purchasePrice < 0 ||
+        !Number.isSafeInteger(salePrice) || salePrice < 0) {
       showFormError(elements.importError, "Vui lòng kiểm tra lại thông tin và nhập số lượng là số nguyên lớn hơn 0.");
       return;
     }
 
-    const existing = inventory.find(function (product) {
-      return product.id.toLocaleLowerCase("vi") === id.toLocaleLowerCase("vi");
-    });
-    const updatedQuantity = (existing ? existing.quantity : 0) + quantity;
-    if (!Number.isSafeInteger(updatedQuantity)) {
-      showFormError(elements.importError, "Tổng số lượng tồn vượt giới hạn cho phép.");
-      return;
+    const submitButton = elements.importForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    try {
+      await apiRequest("/api/inventory/import", {
+        method: "POST",
+        body: JSON.stringify({ id: id, name: name, importDate: importDate,
+          quantity: quantity, purchasePrice: purchasePrice, salePrice: salePrice })
+      });
+      elements.importDialog.close();
+      showNotice("Đã nhập " + numberFormat.format(quantity) + " sản phẩm " + name + ".");
+      try {
+        await loadData();
+      } catch (refreshError) {
+        showNotice("Đã ghi nhận phiếu nhập, nhưng chưa thể làm mới dữ liệu: " + refreshError.message, true);
+      }
+    } catch (error) {
+      showFormError(elements.importError, error.message);
+    } finally {
+      submitButton.disabled = false;
     }
-
-    const product = {
-      id: existing ? existing.id : id,
-      name: name,
-      importDate: importDate,
-      purchasePrice: purchasePrice,
-      salePrice: salePrice,
-      quantity: updatedQuantity
-    };
-    const nextInventory = existing
-      ? inventory.map(function (item) { return item.id === existing.id ? product : item; })
-      : inventory.concat(product);
-    const nextActivity = activity.concat({
-      type: "in",
-      id: product.id,
-      name: product.name,
-      quantity: quantity,
-      timestamp: new Date().toISOString()
-    });
-    if (!saveData(nextInventory, nextActivity)) return;
-    inventory = nextInventory;
-    activity = nextActivity;
-    render();
-    elements.importDialog.close();
-    showNotice("Đã nhập " + numberFormat.format(quantity) + " sản phẩm " + product.name + ".");
   }
 
-  function handleExport(event) {
+  async function handleExport(event) {
     event.preventDefault();
     clearFormError(elements.exportError);
     const id = elements.exportProduct.value;
@@ -355,22 +401,25 @@
       return;
     }
 
-    const nextInventory = inventory.map(function (item) {
-      return item.id === id ? Object.assign({}, item, { quantity: item.quantity - quantity }) : item;
-    });
-    const nextActivity = activity.concat({
-      type: "out",
-      id: product.id,
-      name: product.name,
-      quantity: quantity,
-      timestamp: new Date().toISOString()
-    });
-    if (!saveData(nextInventory, nextActivity)) return;
-    inventory = nextInventory;
-    activity = nextActivity;
-    render();
-    elements.exportDialog.close();
-    showNotice("Đã xuất " + numberFormat.format(quantity) + " sản phẩm " + product.name + ".");
+    const submitButton = elements.exportForm.querySelector('button[type="submit"]');
+    submitButton.disabled = true;
+    try {
+      await apiRequest("/api/inventory/export", {
+        method: "POST",
+        body: JSON.stringify({ id: id, quantity: quantity })
+      });
+      elements.exportDialog.close();
+      showNotice("Đã xuất " + numberFormat.format(quantity) + " sản phẩm " + product.name + ".");
+      try {
+        await loadData();
+      } catch (refreshError) {
+        showNotice("Đã ghi nhận phiếu xuất, nhưng chưa thể làm mới dữ liệu: " + refreshError.message, true);
+      }
+    } catch (error) {
+      showFormError(elements.exportError, error.message);
+    } finally {
+      submitButton.disabled = false;
+    }
   }
 
   function render() {
@@ -381,6 +430,8 @@
   document.querySelector("#import-button").addEventListener("click", openImportDialog);
   document.querySelector("#empty-import-button").addEventListener("click", openImportDialog);
   document.querySelector("#export-button").addEventListener("click", function () { openExportDialog(); });
+  document.querySelector("#logout-button").addEventListener("click", handleLogout);
+  elements.loginForm.addEventListener("submit", handleLogin);
   elements.importForm.addEventListener("submit", handleImport);
   elements.exportForm.addEventListener("submit", handleExport);
   elements.searchInput.addEventListener("input", renderInventory);
@@ -399,6 +450,12 @@
     }
   });
 
-  loadData();
-  render();
+  window.addEventListener("focus", refreshData);
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState === "visible") refreshData();
+  });
+  window.setInterval(function () {
+    if (currentUser) refreshData();
+  }, 15000);
+  checkSession();
 }());

@@ -9,7 +9,26 @@
   <script src="app.js" defer></script>
 </head>
 <body>
-  <div class="app-shell">
+  <main class="login-screen" id="login-screen">
+    <form class="login-card" id="login-form">
+      <span class="brand-mark login-brand-mark" aria-hidden="true">K</span>
+      <p class="eyebrow">KHO HÀNG</p>
+      <h1>Đăng nhập</h1>
+      <p class="page-subtitle">Đăng nhập để truy cập dữ liệu kho dùng chung.</p>
+      <label class="field">
+        <span>Tên đăng nhập</span>
+        <input name="username" autocomplete="username" required maxlength="40">
+      </label>
+      <label class="field">
+        <span>Mật khẩu</span>
+        <input name="password" type="password" autocomplete="current-password" required maxlength="128">
+      </label>
+      <div class="dialog-error" id="login-error" role="alert" hidden></div>
+      <button class="button button-primary login-submit" type="submit">Đăng nhập</button>
+      <p class="login-help">Tài khoản được cấp bởi quản trị viên.</p>
+    </form>
+  </main>
+  <div class="app-shell" id="app-shell" hidden>
     <aside class="sidebar">
       <a class="brand" href="#" aria-label="Kho Hàng - Trang chủ">
         <span class="brand-mark" aria-hidden="true">K</span>
@@ -23,15 +42,19 @@
       </nav>
       <div class="sidebar-note">
         <span class="note-icon" aria-hidden="true">i</span>
-        <p>Dữ liệu được lưu trên trình duyệt của bạn.</p>
+        <p>Dữ liệu kho được lưu tập trung và chia sẻ với người dùng đã đăng nhập.</p>
       </div>
-      <div class="sidebar-footer"><span class="online-dot"></span> Kho hàng của tôi</div>
+      <div class="sidebar-footer"><span class="online-dot"></span> Kho dùng chung</div>
     </aside>
 
     <main class="main-content">
       <header class="topbar">
         <div class="breadcrumb">Quản lý kho <span>/</span> Tổng quan</div>
-        <div class="user-chip"><span class="user-avatar">Q</span><span>Quản lý kho</span></div>
+        <div class="user-chip">
+          <span class="user-avatar" id="user-avatar">Q</span>
+          <span id="user-name">Quản lý kho</span>
+          <button class="button button-secondary logout-button" id="logout-button" type="button">Đăng xuất</button>
+        </div>
       </header>
 
       <section class="page-heading" id="overview">
@@ -124,7 +147,7 @@
         <div class="panel-heading">
           <div>
             <h2>Lịch sử nhập xuất</h2>
-            <p class="panel-subtitle">Các giao dịch gần đây được ghi nhận trên thiết bị này.</p>
+            <p class="panel-subtitle">Các giao dịch gần đây của kho dùng chung.</p>
           </div>
         </div>
         <div class="table-wrap">

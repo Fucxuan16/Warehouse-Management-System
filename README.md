@@ -1,44 +1,75 @@
-# Hướng dẫn sử dụng ứng dụng quản lý kho
+# Hệ thống quản lý kho
 
-Ứng dụng giúp theo dõi hàng hóa trong kho, ghi nhận các lần nhập và xuất, tra cứu mặt hàng theo mã hoặc tên. Ứng dụng chạy trực tiếp trên trình duyệt, không cần cài đặt hoặc tạo tài khoản.
+Ứng dụng web động cho phép nhiều tài khoản đăng nhập vào cùng một kho. Giao diện được phục vụ bởi Node.js/Express; hàng hóa, lịch sử nhập/xuất và phiên đăng nhập được lưu trong PostgreSQL.
 
-## Mở ứng dụng
+## Chức năng
 
-1. Tải hoặc sao chép các tệp của ứng dụng vào cùng một thư mục.
-2. Mở tệp `index.html` bằng trình duyệt web như Microsoft Edge, Google Chrome hoặc Firefox.
-3. Ứng dụng sẽ mở tại trang **Tổng quan**.
+- Đăng nhập bằng tài khoản do quản trị viên tạo.
+- Xem tổng quan, tra cứu và lọc hàng hóa theo trạng thái tồn.
+- Ghi nhận nhập hàng; nhập lại mã cũ sẽ cộng tồn và cập nhật thông tin mặt hàng.
+- Ghi nhận xuất hàng; máy chủ khóa bản ghi trong transaction để ngăn xuất vượt tồn khi có nhiều người thao tác đồng thời.
+- Xem 8 giao dịch gần nhất; lịch sử đầy đủ vẫn được giữ trong cơ sở dữ liệu.
+- Làm mới danh sách định kỳ để các thiết bị đã đăng nhập nhận cập nhật từ kho dùng chung.
 
-Để ứng dụng hoạt động, hãy giữ `index.html`, `app.js` và `styles.css` trong cùng thư mục.
+## Chạy trên máy cá nhân
 
-## Nhập hàng
+Yêu cầu Node.js 20 trở lên và một PostgreSQL đang chạy.
 
-1. Chọn **Nhập hàng**.
-2. Điền mã hàng, tên hàng, ngày nhập, số lượng nhập, giá mua và giá bán.
-3. Chọn **Lưu phiếu nhập**.
+1. Tạo database PostgreSQL, ví dụ `warehouse`.
+2. Cài dependency:
 
-Các trường có dấu `*` là bắt buộc. Số lượng nhập phải là số nguyên lớn hơn 0; giá mua và giá bán phải từ 0 trở lên.
+   ```powershell
+   npm ci
+   ```
 
-Nếu nhập một mã hàng đã có trong kho, ứng dụng sẽ cộng số lượng vào tồn hiện tại và cập nhật tên hàng, ngày nhập cùng giá mua, giá bán theo thông tin vừa nhập. Mã hàng được đối chiếu không phân biệt chữ hoa và chữ thường.
+3. Cấu hình biến môi trường PowerShell (thay giá trị bằng thông tin database và một secret ngẫu nhiên dài tối thiểu 32 ký tự):
 
-## Xuất hàng
+   ```powershell
+   $env:DATABASE_URL = "postgres://postgres:password@localhost:5432/warehouse"
+   $env:SESSION_SECRET = "thay-bang-chuoi-ngau-nhien-dai-it-nhat-32-ky-tu"
+   ```
 
-1. Chọn **Xuất hàng** ở đầu trang hoặc chọn **Xuất hàng** ngay trên dòng mặt hàng cần xuất.
-2. Chọn mặt hàng và nhập số lượng xuất.
-3. Chọn **Lưu phiếu xuất**.
+4. Tạo tài khoản đầu tiên. Mật khẩu được nhập ẩn và phải có ít nhất 12 ký tự:
 
-Ứng dụng hiển thị số lượng đang có và không cho phép xuất nhiều hơn tồn kho. Sau khi xuất, tồn kho và lịch sử giao dịch sẽ được cập nhật.
+   ```powershell
+   npm run create-user
+   ```
 
-## Tra cứu và kiểm tra tồn kho
+5. Chạy ứng dụng:
 
-- Nhập mã hàng hoặc tên hàng vào ô tìm kiếm để lọc danh sách. Có thể bấm phím `/` để chuyển nhanh đến ô tìm kiếm.
-- Dùng bộ lọc trạng thái để xem tất cả mặt hàng, hàng còn, sắp hết hoặc hết hàng.
-- Trang tổng quan hiển thị số mặt hàng, tổng số lượng tồn, số mặt hàng sắp hết và số mặt hàng đã hết.
-- Mặt hàng có từ 1 đến 5 sản phẩm được đánh dấu **Sắp hết**. Mặt hàng có số lượng tồn bằng 0 được đánh dấu **Hết hàng**.
-- Phần **Lịch sử nhập xuất** hiển thị tối đa 8 giao dịch gần nhất.
+   ```powershell
+   npm run dev
+   ```
 
-## Lưu ý về dữ liệu
+6. Mở <http://localhost:3000>.
 
-- Dữ liệu được lưu trong bộ nhớ của trình duyệt trên thiết bị hiện tại, không được đồng bộ giữa các máy hoặc trình duyệt.
-- Hãy tiếp tục dùng đúng trình duyệt và thiết bị đã nhập dữ liệu. Xóa dữ liệu trang web, bộ nhớ trình duyệt hoặc chuyển sang thiết bị khác có thể khiến dữ liệu không còn truy cập được.
-- Các tệp ứng dụng không chứa dữ liệu kho. Sao chép riêng các tệp ứng dụng sang máy khác không chuyển dữ liệu hàng hóa.
-- Ứng dụng không yêu cầu kết nối đến cơ sở dữ liệu hoặc máy chủ. Phông chữ trực tuyến có thể cần kết nối Internet; nếu không có mạng, trình duyệt sẽ dùng phông chữ dự phòng.
+Schema được khởi tạo tự động khi máy chủ chạy. Không đưa `DATABASE_URL`, `SESSION_SECRET` hoặc mật khẩu vào Git.
+
+## Deploy trên Render
+
+Repository có sẵn [render.yaml](./render.yaml) để tạo web service và PostgreSQL cùng vùng Singapore.
+
+1. Push các thay đổi lên GitHub.
+2. Đăng nhập Render, chọn **New → Blueprint** và kết nối repository này.
+3. Kiểm tra cấu hình trong `render.yaml`, sau đó tạo resource. Render sẽ cấp `DATABASE_URL` nội bộ và tạo `SESSION_SECRET`.
+4. Chờ build/deploy thành công; kiểm tra health endpoint `/health`.
+5. Mở **Shell** của web service trên Render và chạy:
+
+   ```sh
+   npm run create-user
+   ```
+
+   Nhập username và mật khẩu bằng terminal tương tác (mật khẩu không hiển thị). Tạo thêm tài khoản bằng cách chạy lại lệnh.
+6. Mở URL `onrender.com` của web service và đăng nhập.
+
+Blueprint chọn gói web `starter` và PostgreSQL `basic-256mb` để dùng dịch vụ chạy liên tục và database bền vững; đây là các gói có phí của Render. Hãy kiểm tra trang giá hiện hành của Render trước khi xác nhận. Không đổi database sang gói tạm thời nếu cần giữ dữ liệu kho.
+
+## Bảo mật và lưu ý dữ liệu
+
+- Không có màn hình đăng ký công khai; chỉ quản trị viên tạo tài khoản bằng lệnh CLI.
+- Mật khẩu được băm bằng scrypt, phiên đăng nhập nằm trong PostgreSQL, cookie phiên là `HttpOnly`, `SameSite=Strict` và chỉ dùng HTTPS ở production.
+- Endpoint ghi dữ liệu yêu cầu cùng nguồn; đăng nhập được giới hạn tối đa 10 lần trong 15 phút cho mỗi địa chỉ IP.
+- Tài khoản đăng nhập có quyền cập nhật kho chung; hiện chưa có vai trò/phân quyền chi tiết.
+- Dữ liệu cũ từng lưu trong `localStorage` của phiên bản tĩnh không tự được chuyển sang database. Trước khi chuyển đổi, hãy lưu lại dữ liệu cũ; cần nhập lại dữ liệu vào phiên bản mới.
+- Cần bật và kiểm tra backup PostgreSQL định kỳ trong Render trước khi sử dụng với dữ liệu nghiệp vụ quan trọng.
+- Mọi người dùng cùng một kho; hệ thống không hỗ trợ tách kho theo công ty/chi nhánh.

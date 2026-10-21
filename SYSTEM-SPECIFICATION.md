@@ -5,15 +5,15 @@
     | Thuộc tính | Mô tả |
     |---|---|
     | Tên hệ thống | Kho Hàng - Quản lý kho |
-    | Phiên bản đặc tả | 1.0 |
+    | Phiên bản đặc tả | 2.0 |
     | Trạng thái | Mô tả chức năng hiện có trong mã nguồn |
     | Ngôn ngữ giao diện | Tiếng Việt |
-    | Loại ứng dụng | Ứng dụng web tĩnh chạy trên trình duyệt |
+    | Loại ứng dụng | Ứng dụng web động Node.js/Express với cơ sở dữ liệu PostgreSQL |
     | Người dùng mục tiêu | Cá nhân hoặc nhân viên cần theo dõi nhập, xuất và tồn kho đơn giản |
 
     ## 2. Mục tiêu và phạm vi
 
-    Hệ thống hỗ trợ quản lý danh sách mặt hàng trong một kho trên một trình duyệt, ghi nhận giao dịch nhập/xuất, tra cứu hàng hóa và theo dõi số lượng tồn.
+    Hệ thống hỗ trợ nhiều tài khoản cùng truy cập một kho dữ liệu tập trung, ghi nhận giao dịch nhập/xuất, tra cứu hàng hóa và theo dõi số lượng tồn.
 
     Phiên bản hiện tại bao gồm:
 
@@ -22,16 +22,18 @@
     - Ghi nhận nhập hàng và bổ sung số lượng cho mặt hàng đã có.
     - Ghi nhận xuất hàng có kiểm tra tồn kho.
     - Lịch sử các giao dịch nhập/xuất gần đây.
-    - Lưu dữ liệu bằng `localStorage` của trình duyệt.
+    - Lưu hàng hóa, lịch sử và phiên đăng nhập trong PostgreSQL.
+    - Đăng nhập bằng tài khoản do quản trị viên tạo.
+    - Đồng bộ dữ liệu kho giữa các trình duyệt/thiết bị đã đăng nhập thông qua máy chủ.
 
-    Phiên bản hiện tại không bao gồm tài khoản, phân quyền, nhiều kho, đồng bộ dữ liệu giữa người dùng/thiết bị, máy chủ ứng dụng, cơ sở dữ liệu tập trung, xuất báo cáo hoặc quản lý nhà cung cấp/đơn hàng.
+    Phiên bản hiện tại chưa bao gồm phân quyền chi tiết, đăng ký công khai, nhiều kho, xuất báo cáo hoặc quản lý nhà cung cấp/đơn hàng.
 
     ## 3. Người dùng và môi trường vận hành
 
-    - **Người sử dụng:** người mở ứng dụng bằng trình duyệt và trực tiếp cập nhật dữ liệu kho.
-    - **Môi trường:** trình duyệt web hiện đại có hỗ trợ JavaScript, HTML Dialog và `localStorage`.
-    - **Triển khai:** các tệp tĩnh `index.html`, `app.js` và `style.css` có thể được phục vụ từ máy chủ web tĩnh, ví dụ GitHub Pages. Ứng dụng không cần máy chủ backend để thực hiện các chức năng hiện có.
-    - **Kết nối mạng:** không cần kết nối mạng cho logic ứng dụng sau khi tải trang; tài nguyên phông chữ trực tuyến (nếu có) có thể cần Internet.
+    - **Người sử dụng:** người có tài khoản được quản trị viên cấp, đăng nhập bằng trình duyệt.
+    - **Môi trường:** trình duyệt web hiện đại có hỗ trợ JavaScript và HTML Dialog; máy chủ chạy Node.js 20 trở lên.
+    - **Triển khai:** Node.js/Express phục vụ giao diện và API; PostgreSQL lưu dữ liệu. Cấu hình Render mẫu nằm trong `render.yaml`.
+    - **Kết nối mạng:** cần kết nối tới máy chủ để đăng nhập, đọc dữ liệu và ghi giao dịch.
 
     ## 4. Chức năng hệ thống
 
@@ -78,8 +80,8 @@
     | Tên hàng | Có | Văn bản, tối đa 100 ký tự sau giới hạn giao diện |
     | Ngày nhập | Có | Ngày do người dùng chọn; mặc định là ngày hiện tại |
     | Số lượng nhập | Có | Số nguyên lớn hơn 0 |
-    | Giá mua | Có | Số không âm |
-    | Giá bán | Có | Số không âm |
+    | Giá mua | Có | Số nguyên an toàn không âm |
+    | Giá bán | Có | Số nguyên an toàn không âm |
 
     Kết quả xử lý:
 
@@ -88,9 +90,9 @@
     3. Nếu là mã hàng mới, hệ thống tạo mặt hàng với số lượng bằng số lượng nhập.
     4. Nếu mã hàng đã tồn tại, hệ thống cộng số lượng nhập vào tồn hiện tại và cập nhật tên, ngày nhập, giá mua, giá bán theo thông tin vừa nhập. Mã hàng đang lưu giữ nguyên cách viết ban đầu.
     5. Hệ thống tạo một giao dịch nhập chứa mã hàng, tên hàng, số lượng giao dịch và thời điểm ghi nhận.
-    6. Chỉ cập nhật giao diện và trạng thái trong bộ nhớ sau khi lưu dữ liệu thành công vào trình duyệt.
+    6. Máy chủ thực hiện cập nhật mặt hàng và ghi lịch sử trong cùng transaction PostgreSQL; chỉ báo thành công sau khi commit.
 
-    Hệ thống từ chối dữ liệu không hợp lệ hoặc tổng tồn vượt giới hạn số nguyên an toàn của JavaScript, đồng thời hiển thị lỗi trong hộp thoại.
+    Hệ thống từ chối dữ liệu không hợp lệ hoặc tổng tồn vượt giới hạn số nguyên an toàn của JavaScript, đồng thời hiển thị lỗi trong hộp thoại. Máy chủ khóa theo mã hàng trong transaction để tuần tự hóa các lần nhập đồng thời.
 
     ### 4.4. Xuất hàng
 
@@ -100,8 +102,9 @@
 
     - Mặt hàng hết tồn không xuất hiện trong danh sách chọn.
     - Số lượng xuất phải là số nguyên lớn hơn 0.
-    - Số lượng xuất không được vượt tồn hiện tại.
-    - Sau khi hợp lệ, hệ thống trừ tồn và tạo giao dịch xuất có mã hàng, tên hàng, số lượng và thời điểm ghi nhận.
+    - Số lượng xuất không được vượt tồn hiện tại tại thời điểm máy chủ xử lý giao dịch.
+    - Máy chủ khóa bản ghi mặt hàng trong transaction, trừ tồn và tạo giao dịch xuất nguyên tử để ngăn xuất đồng thời vượt tồn.
+    - Giao dịch chứa người dùng đã thực hiện, mã hàng, tên hàng, số lượng và thời điểm ghi nhận.
     - Khi tồn về 0, trạng thái mặt hàng chuyển thành hết hàng.
 
     ### 4.5. Trạng thái tồn kho
@@ -119,7 +122,17 @@
     - Mỗi lần nhập/xuất thành công tạo một bản ghi giao dịch.
     - Lịch sử hiển thị tối đa 8 giao dịch mới nhất, theo thứ tự mới nhất trước.
     - Bản ghi hiển thị loại giao dịch, mã hàng, tên hàng, số lượng tăng/giảm và thời gian.
-    - Dữ liệu giao dịch được lưu cùng dữ liệu kho trên trình duyệt. Giao diện chỉ trình bày 8 giao dịch gần nhất.
+    - Dữ liệu giao dịch được lưu đầy đủ trong PostgreSQL. Giao diện chỉ truy vấn và trình bày 8 giao dịch gần nhất.
+
+    ### 4.7. Đăng nhập và phiên làm việc
+
+    - Người dùng đăng nhập bằng tên tài khoản và mật khẩu do quản trị viên cấp.
+    - Không có luồng tự đăng ký công khai.
+    - Mật khẩu được băm bằng scrypt; không lưu mật khẩu dạng rõ.
+    - Phiên có thời hạn 8 giờ, lưu trong PostgreSQL và sử dụng cookie `HttpOnly`, `SameSite=Strict`; cookie được đánh dấu `Secure` trong môi trường production.
+    - API dữ liệu và ghi giao dịch yêu cầu phiên đăng nhập hợp lệ.
+    - Đăng nhập bị giới hạn 10 lần trong 15 phút cho mỗi địa chỉ IP.
+    - Tài khoản được tạo qua lệnh quản trị `npm run create-user`; mọi tài khoản hiện có quyền thao tác trên kho chung.
 
     ## 5. Quy tắc nghiệp vụ
 
@@ -141,8 +154,8 @@
     | `id` | Chuỗi | Mã hàng |
     | `name` | Chuỗi | Tên hàng |
     | `importDate` | Chuỗi ngày `YYYY-MM-DD` | Ngày nhập gần nhất |
-    | `purchasePrice` | Số hữu hạn, không âm | Giá mua |
-    | `salePrice` | Số hữu hạn, không âm | Giá bán |
+    | `purchasePrice` | Số nguyên, không âm | Giá mua (VND) |
+    | `salePrice` | Số nguyên, không âm | Giá bán (VND) |
     | `quantity` | Số nguyên an toàn, không âm | Số lượng tồn hiện tại |
 
     ### 6.2. Giao dịch
@@ -154,15 +167,25 @@
     | `name` | Chuỗi | Tên hàng tại thời điểm giao dịch |
     | `quantity` | Số nguyên dương | Số lượng nhập hoặc xuất |
     | `timestamp` | Chuỗi thời gian ISO 8601 | Thời điểm giao dịch |
+    | `created_by` | Chuỗi | Tên tài khoản ghi nhận giao dịch |
 
     ### 6.3. Lưu trữ và khôi phục
 
-    - Khóa lưu trữ trong `localStorage`: `khohang.data.v1`.
-    - Dữ liệu gồm hai danh sách `inventory` và `activity`.
-    - Khi mở ứng dụng, hệ thống đọc và kiểm tra định dạng dữ liệu đã lưu.
-    - Nếu dữ liệu không đọc được hoặc không thể ghi, hệ thống hiển thị thông báo lỗi trên giao diện.
-    - Dữ liệu thuộc phạm vi trình duyệt và nguồn web hiện tại; không tự đồng bộ sang trình duyệt, thiết bị hoặc người dùng khác.
-    - Xóa dữ liệu trang web/bộ nhớ trình duyệt có thể làm mất dữ liệu kho.
+    - PostgreSQL lưu bảng `app_users`, `inventory`, `activity` và `user_sessions`.
+    - Khóa `inventory.id` không phân biệt chữ hoa/chữ thường.
+    - Ghi nhận nhập/xuất và cập nhật tồn kho trong cùng transaction; lỗi sẽ rollback toàn bộ thay đổi.
+    - Dữ liệu được chia sẻ giữa các tài khoản đã đăng nhập vào cùng deployment.
+    - Giao diện tải lại dữ liệu định kỳ 15 giây và khi người dùng quay lại tab.
+    - Dữ liệu vẫn tồn tại khi xóa cookie/trình duyệt; tuy nhiên cần backup PostgreSQL để phòng mất dữ liệu từ nhà cung cấp/hạ tầng.
+    - Dữ liệu từ phiên bản cũ lưu trong `localStorage` không tự động được chuyển sang database.
+
+    ### 6.4. Tài khoản
+
+    | Thuộc tính | Kiểu dữ liệu | Ý nghĩa |
+    |---|---|---|
+    | `username` | Chuỗi duy nhất, chữ thường | Tên đăng nhập |
+    | `password_hash` | Chuỗi scrypt | Mật khẩu đã băm, không lưu dạng rõ |
+    | `created_at` | Thời gian | Thời điểm tạo tài khoản |
 
     ## 7. Yêu cầu giao diện và khả năng sử dụng
 
@@ -174,31 +197,31 @@
 
     ## 8. Yêu cầu phi chức năng và giới hạn
 
-    - **Tính sẵn sàng:** ứng dụng có thể được lưu trữ dưới dạng website tĩnh; không phụ thuộc dịch vụ backend.
-    - **Tính riêng tư:** dữ liệu kho hiện được lưu cục bộ trong trình duyệt, không gửi tới máy chủ ứng dụng.
-    - **Tính nhất quán:** tồn kho và lịch sử chỉ được cập nhật sau khi ghi `localStorage` thành công.
-    - **Bảo toàn dữ liệu:** phiên bản hiện tại không có sao lưu/khôi phục tích hợp; người dùng chịu rủi ro mất dữ liệu nếu xóa dữ liệu trình duyệt hoặc gặp sự cố thiết bị.
-    - **Đồng thời:** không có cơ chế khóa hoặc hợp nhất cập nhật từ nhiều cửa sổ/người dùng.
-    - **Bảo mật tài khoản:** không có đăng nhập, phân quyền hoặc quản lý phiên người dùng.
-    - **Dung lượng:** giới hạn lưu trữ phụ thuộc trình duyệt; ứng dụng chưa quy định chính sách giới hạn/xóa lịch sử giao dịch.
+    - **Kiến trúc:** ứng dụng cần máy chủ Node.js và PostgreSQL; không thể triển khai chức năng động chỉ bằng GitHub Pages.
+    - **Tính nhất quán:** tồn và lịch sử cập nhật nguyên tử trong cùng transaction PostgreSQL.
+    - **Đồng thời:** giao dịch xuất khóa dòng mặt hàng; giao dịch nhập sử dụng advisory lock theo mã hàng.
+    - **Bảo mật:** mật khẩu băm scrypt, phiên lưu phía máy chủ, cookie bảo vệ và kiểm tra cùng nguồn cho các yêu cầu ghi.
+    - **Phân quyền:** mọi tài khoản hiện có cùng quyền trên một kho; chưa có vai trò quản trị viên/người xem trong ứng dụng.
+    - **Bảo toàn dữ liệu:** cần cấu hình/chọn backup PostgreSQL phù hợp; ứng dụng chưa có giao diện sao lưu/khôi phục.
+    - **Đồng bộ giao diện:** thiết bị đang đăng nhập cập nhật theo chu kỳ 15 giây, không phải đồng bộ tức thời.
 
     ## 9. Ngoài phạm vi hiện tại
 
     Các chức năng sau không được cung cấp trong phiên bản đang mô tả:
 
-    - Đăng nhập, vai trò và phân quyền người dùng.
-    - Cơ sở dữ liệu dùng chung, đồng bộ nhiều thiết bị hoặc nhiều người dùng.
+    - Vai trò và phân quyền chi tiết, đăng ký/tự đổi mật khẩu trong giao diện.
+    - Tách dữ liệu nhiều kho hoặc nhiều tổ chức.
     - Quản lý nhiều kho, vị trí/kệ hàng hoặc chuyển kho.
     - Quản lý nhà cung cấp, khách hàng, đơn mua hoặc đơn bán.
     - Xóa/sửa mặt hàng độc lập với luồng nhập hàng.
     - Sửa/hủy giao dịch đã ghi nhận.
     - Xuất/nhập dữ liệu bằng Excel/CSV hoặc sao lưu dữ liệu.
     - Báo cáo doanh thu, lợi nhuận, giá trị tồn kho hoặc lịch sử đầy đủ có phân trang.
-    - Nhật ký kiểm toán và phân quyền duyệt giao dịch.
+    - Giao diện quản trị tài khoản và nhật ký kiểm toán chi tiết.
 
     ## 10. Tiêu chí nghiệm thu chức năng hiện tại
 
-    1. Khi mở ứng dụng, các mặt hàng đã lưu trên cùng trình duyệt được khôi phục và các chỉ số tổng quan khớp với dữ liệu.
+    1. Truy cập API dữ liệu khi chưa đăng nhập bị từ chối; tài khoản hợp lệ đăng nhập được và nhận dữ liệu từ PostgreSQL.
     2. Nhập một mã hàng mới với dữ liệu hợp lệ tạo mặt hàng, tăng tổng tồn và thêm giao dịch nhập.
     3. Nhập lại cùng mã hàng với khác biệt chữ hoa/chữ thường cộng tồn vào đúng mặt hàng và cập nhật thông tin hàng theo lần nhập mới.
     4. Dữ liệu nhập thiếu hoặc không hợp lệ không làm thay đổi tồn kho và hiển thị lỗi.
@@ -207,4 +230,6 @@
     7. Mặt hàng tồn 0, từ 1 đến 5, và lớn hơn 5 lần lượt hiển thị trạng thái hết hàng, sắp hết, và còn hàng.
     8. Tìm kiếm theo mã/tên và lọc trạng thái hiển thị đúng tập mặt hàng phù hợp.
     9. Lịch sử giao dịch hiển thị tối đa 8 giao dịch mới nhất.
-    10. Tải lại trang trên cùng trình duyệt vẫn giữ dữ liệu đã lưu; mở trên trình duyệt/thiết bị khác không tự có dữ liệu đó.
+    10. Giao dịch được commit vẫn còn sau khi đăng xuất, tải lại trang hoặc đăng nhập từ thiết bị khác.
+    11. Người dùng khác đang đăng nhập thấy thay đổi sau lần làm mới dữ liệu tiếp theo.
+    12. Ứng dụng chỉ phục vụ giao diện qua Express; các tệp server, cấu hình và biến môi trường không được cung cấp như tài nguyên tĩnh.
