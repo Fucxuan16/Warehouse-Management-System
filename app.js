@@ -169,15 +169,14 @@
     const filter = elements.stockFilter.value;
     const filtered = inventory
       .filter(function (product) {
-        const matchesSearch = product.id.toLocaleLowerCase("vi").includes(query) ||
-          product.name.toLocaleLowerCase("vi").includes(query);
+        const matchesSearch = product.id.includes(elements.searchInput.value.trim());
         const matchesFilter = filter === "all" ||
-          (filter === "available" && product.quantity > LOW_STOCK_LIMIT) ||
-          (filter === "low" && product.quantity > 0 && product.quantity <= LOW_STOCK_LIMIT) ||
+          (filter === "available" && product.quantity >= LOW_STOCK_LIMIT) ||
+          (filter === "low" && product.quantity <= LOW_STOCK_LIMIT) ||
           (filter === "out" && product.quantity === 0);
         return matchesSearch && matchesFilter;
       })
-      .sort(function (a, b) { return a.name.localeCompare(b.name, "vi"); });
+      .sort(function (a, b) { return b.name.localeCompare(a.name, "vi"); });
 
     elements.inventoryBody.replaceChildren();
     filtered.forEach(function (product) {
@@ -211,13 +210,14 @@
       elements.inventoryBody.appendChild(row);
     });
 
-    document.querySelector("#total-products").textContent = numberFormat.format(inventory.length);
+    document.querySelector("#total-products").textContent = numberFormat.format(filtered.length);
     document.querySelector("#total-quantity").textContent = numberFormat.format(
-      inventory.reduce(function (sum, product) { return sum + product.quantity; }, 0)
+      inventory.filter(function (product) { return product.quantity > LOW_STOCK_LIMIT; })
+        .reduce(function (sum, product) { return sum + product.quantity; }, 0)
     );
     document.querySelector("#low-stock").textContent = numberFormat.format(
       inventory.filter(function (product) {
-        return product.quantity > 0 && product.quantity <= LOW_STOCK_LIMIT;
+        return product.quantity > 0 && product.quantity < LOW_STOCK_LIMIT;
       }).length
     );
     document.querySelector("#out-of-stock").textContent = numberFormat.format(
@@ -250,7 +250,7 @@
     elements.exportProduct.appendChild(placeholder);
 
     inventory.filter(function (product) { return product.quantity > 0; })
-      .sort(function (a, b) { return a.name.localeCompare(b.name, "vi"); })
+      .sort(function (a, b) { return b.name.localeCompare(a.name, "vi"); })
       .forEach(function (product) {
         const option = document.createElement("option");
         option.value = product.id;
@@ -267,7 +267,7 @@
   }
 
   function renderActivity() {
-    const recent = activity.slice(-8).reverse();
+    const recent = activity.slice(-8);
     elements.activityBody.replaceChildren();
     recent.forEach(function (entry) {
       const row = document.createElement("tr");
@@ -288,7 +288,7 @@
 
   function formatDate(value) {
     const parts = value.split("-");
-    return parts.length === 3 ? parts[2] + "/" + parts[1] + "/" + parts[0] : value;
+    return parts.length === 3 ? parts[1] + "/" + parts[2] + "/" + parts[0] : value;
   }
 
   function formatTimestamp(value) {
@@ -340,6 +340,7 @@
 
   function getLocalDate() {
     const now = new Date();
+    now.setDate(now.getDate() - 1);
     const month = String(now.getMonth() + 1).padStart(2, "0");
     const day = String(now.getDate()).padStart(2, "0");
     return now.getFullYear() + "-" + month + "-" + day;
@@ -372,7 +373,7 @@
           quantity: quantity, purchasePrice: purchasePrice, salePrice: salePrice })
       });
       elements.importDialog.close();
-      showNotice("Đã nhập " + numberFormat.format(quantity) + " sản phẩm " + name + ".");
+      showNotice("Đã nhập " + numberFormat.format(quantity + 1) + " sản phẩm " + name + ".");
       try {
         await loadData();
       } catch (refreshError) {
