@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f6f3">
+  <title>Kho Hàng - Quản lý kho</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="app.js" defer></script>
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#" aria-label="Kho Hàng - Trang chủ">
+        <span class="brand-mark" aria-hidden="true">K</span>
+        <span>kho<span class="brand-light">hàng</span></span>
+      </a>
+      <p class="sidebar-label">MENU</p>
+      <nav class="main-nav" aria-label="Menu chính">
+        <a class="nav-link active" href="#overview"><span class="nav-icon" aria-hidden="true">⌂</span>Tổng quan</a>
+        <a class="nav-link" href="#inventory"><span class="nav-icon" aria-hidden="true">▤</span>Kho hàng</a>
+        <a class="nav-link" href="#activity"><span class="nav-icon" aria-hidden="true">↺</span>Lịch sử nhập xuất</a>
+      </nav>
+      <div class="sidebar-note">
+        <span class="note-icon" aria-hidden="true">i</span>
+        <p>Dữ liệu được lưu trên trình duyệt của bạn.</p>
+      </div>
+      <div class="sidebar-footer"><span class="online-dot"></span> Kho hàng của tôi</div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="breadcrumb">Quản lý kho <span>/</span> Tổng quan</div>
+        <div class="user-chip"><span class="user-avatar">Q</span><span>Quản lý kho</span></div>
+      </header>
+
+      <section class="page-heading" id="overview">
+        <div>
+          <p class="eyebrow">TỔNG QUAN KHO</p>
+          <h1>Quản lý hàng hóa</h1>
+          <p class="page-subtitle">Theo dõi hàng tồn, cập nhật nhập xuất và tra cứu sản phẩm.</p>
+        </div>
+        <div class="heading-actions">
+          <button class="button button-secondary" id="export-button" type="button"><span aria-hidden="true">↑</span> Xuất hàng</button>
+          <button class="button button-primary" id="import-button" type="button"><span aria-hidden="true">＋</span> Nhập hàng</button>
+        </div>
+      </section>
+
+      <div class="notice" id="notice" role="status" aria-live="polite" hidden></div>
+
+      <section class="stats-grid" aria-label="Thống kê kho hàng">
+        <article class="stat-card">
+          <div class="stat-top"><span class="stat-label">Tổng mặt hàng</span><span class="stat-icon icon-green" aria-hidden="true">▤</span></div>
+          <p class="stat-value" id="total-products">0</p>
+          <p class="stat-caption">Mã hàng đang quản lý</p>
+        </article>
+        <article class="stat-card">
+          <div class="stat-top"><span class="stat-label">Tổng số lượng tồn</span><span class="stat-icon icon-blue" aria-hidden="true">▣</span></div>
+          <p class="stat-value" id="total-quantity">0</p>
+          <p class="stat-caption">Sản phẩm trong kho</p>
+        </article>
+        <article class="stat-card">
+          <div class="stat-top"><span class="stat-label">Sắp hết hàng</span><span class="stat-icon icon-amber" aria-hidden="true">!</span></div>
+          <p class="stat-value" id="low-stock">0</p>
+          <p class="stat-caption">Mặt hàng còn từ 1 đến 5 sản phẩm</p>
+        </article>
+        <article class="stat-card">
+          <div class="stat-top"><span class="stat-label">Đã hết hàng</span><span class="stat-icon icon-red" aria-hidden="true">−</span></div>
+          <p class="stat-value" id="out-of-stock">0</p>
+          <p class="stat-caption">Mặt hàng cần nhập thêm</p>
+        </article>
+      </section>
+
+      <section class="panel inventory-panel" id="inventory">
+        <div class="panel-heading">
+          <div>
+            <h2>Danh sách hàng hóa</h2>
+            <p class="panel-subtitle">Tra cứu và kiểm tra số lượng hàng tồn trong kho.</p>
+          </div>
+          <span class="item-count" id="item-count">0 mặt hàng</span>
+        </div>
+        <div class="table-toolbar">
+          <label class="search-box">
+            <span class="search-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Tìm theo mã hoặc tên hàng</span>
+            <input id="search-input" type="search" placeholder="Tìm theo mã hoặc tên hàng..." autocomplete="off">
+            <kbd>/</kbd>
+          </label>
+          <label class="filter-label" for="stock-filter">Trạng thái</label>
+          <select id="stock-filter" class="filter-select">
+            <option value="all">Tất cả mặt hàng</option>
+            <option value="available">Còn hàng</option>
+            <option value="low">Sắp hết hàng</option>
+            <option value="out">Hết hàng</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>MÃ HÀNG</th>
+                <th>TÊN HÀNG</th>
+                <th>NGÀY NHẬP GẦN NHẤT</th>
+                <th>GIÁ MUA</th>
+                <th>GIÁ BÁN</th>
+                <th>TỒN KHO</th>
+                <th>TRẠNG THÁI</th>
+                <th><span class="visually-hidden">Thao tác</span></th>
+              </tr>
+            </thead>
+            <tbody id="inventory-body"></tbody>
+          </table>
+          <div class="empty-state" id="empty-state">
+            <span class="empty-icon" aria-hidden="true">▤</span>
+            <strong id="empty-title">Chưa có hàng hóa</strong>
+            <span id="empty-description">Thêm mặt hàng đầu tiên để bắt đầu quản lý kho.</span>
+            <button class="button button-primary button-small" id="empty-import-button" type="button">＋ Nhập hàng đầu tiên</button>
+          </div>
+        </div>
+        <div class="table-footer"><span id="table-summary">Hiển thị 0 mặt hàng</span><span>Số lượng tồn được cập nhật tự động</span></div>
+      </section>
+
+      <section class="panel activity-panel" id="activity">
+        <div class="panel-heading">
+          <div>
+            <h2>Lịch sử nhập xuất</h2>
+            <p class="panel-subtitle">Các giao dịch gần đây được ghi nhận trên thiết bị này.</p>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>LOẠI GIAO DỊCH</th><th>MÃ HÀNG</th><th>TÊN HÀNG</th><th>SỐ LƯỢNG</th><th>THỜI GIAN</th></tr>
+            </thead>
+            <tbody id="activity-body"></tbody>
+          </table>
+          <div class="activity-empty" id="activity-empty">Chưa có giao dịch nhập hoặc xuất nào.</div>
+        </div>
+      </section>
+      <footer class="page-footer">Kho Hàng <span>·</span> Quản lý đơn giản, tồn kho rõ ràng.</footer>
+    </main>
+  </div>
+
+  <dialog class="form-dialog" id="import-dialog">
+    <form id="import-form">
+      <div class="dialog-heading">
+        <div><p class="eyebrow">CẬP NHẬT KHO</p><h2>Nhập hàng hóa</h2></div>
+        <button class="icon-button" type="button" data-close="import-dialog" aria-label="Đóng">×</button>
+      </div>
+      <p class="dialog-description">Nhập thông tin mặt hàng và số lượng bổ sung vào kho. Nếu mã hàng đã tồn tại, số lượng sẽ được cộng vào tồn kho hiện có.</p>
+      <div class="form-grid">
+        <label class="field"><span>Mã hàng <b>*</b></span><input name="id" required maxlength="40" placeholder="Ví dụ: SP-001"></label>
+        <label class="field"><span>Tên hàng <b>*</b></span><input name="name" required maxlength="100" placeholder="Nhập tên sản phẩm"></label>
+        <label class="field"><span>Ngày nhập hàng <b>*</b></span><input name="date" type="date" required></label>
+        <label class="field"><span>Số lượng nhập <b>*</b></span><input name="quantity" type="number" min="1" step="1" required placeholder="0"></label>
+        <label class="field"><span>Giá mua (₫) <b>*</b></span><input name="purchasePrice" type="number" min="0" step="1" required placeholder="0"></label>
+        <label class="field"><span>Giá bán (₫) <b>*</b></span><input name="salePrice" type="number" min="0" step="1" required placeholder="0"></label>
+      </div>
+      <div class="dialog-error" id="import-error" role="alert" hidden></div>
+      <div class="dialog-actions"><button class="button button-secondary" type="button" data-close="import-dialog">Hủy</button><button class="button button-primary" type="submit">Lưu phiếu nhập</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="form-dialog export-dialog" id="export-dialog">
+    <form id="export-form">
+      <div class="dialog-heading">
+        <div><p class="eyebrow">CẬP NHẬT KHO</p><h2>Xuất hàng hóa</h2></div>
+        <button class="icon-button" type="button" data-close="export-dialog" aria-label="Đóng">×</button>
+      </div>
+      <p class="dialog-description">Chọn mặt hàng và nhập số lượng cần xuất. Số lượng xuất không thể lớn hơn tồn kho hiện có.</p>
+      <div class="form-grid">
+        <label class="field field-full"><span>Mặt hàng <b>*</b></span><select name="id" id="export-product" required></select></label>
+        <div class="stock-hint field-full" id="export-stock-hint">Chọn một mặt hàng để xem số lượng tồn.</div>
+        <label class="field field-full"><span>Số lượng xuất <b>*</b></span><input name="quantity" type="number" min="1" step="1" required placeholder="0"></label>
+      </div>
+      <div class="dialog-error" id="export-error" role="alert" hidden></div>
+      <div class="dialog-actions"><button class="button button-secondary" type="button" data-close="export-dialog">Hủy</button><button class="button button-primary" type="submit">Lưu phiếu xuất</button></div>
+    </form>
+  </dialog>
+</body>
+</html>
