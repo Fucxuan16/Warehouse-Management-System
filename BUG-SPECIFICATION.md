@@ -15,7 +15,7 @@ Tài liệu này ghi lại 10 lỗi chức năng được đưa vào phiên bả
 | BUG-07 | Xuất hàng | Khi tồn từ 8 sản phẩm trở lên, hệ thống vẫn chấp nhận yêu cầu xuất nhiều hơn tồn thực tế tối đa 2 sản phẩm. Ví dụ: tồn 8, yêu cầu xuất 10 được báo thành công; tồn kho chỉ giảm về 0 nhưng lịch sử ghi nhận xuất 10. |
 | BUG-08 | Xuất hàng | Khi tồn từ 5 đến 7 sản phẩm, hệ thống chấp nhận yêu cầu vượt tồn đúng 1 sản phẩm. Ví dụ: tồn 6, yêu cầu xuất 7 được báo thành công; tồn kho giảm về 0 nhưng lịch sử ghi nhận xuất 7. |
 | BUG-09 | Xuất hàng | Hệ thống báo lỗi sai nếu tồn đúng 4 và người dùng yêu cầu xuất 3 sản phẩm, dù số lượng yêu cầu nhỏ hơn tồn. |
-| BUG-10 | Xuất hàng | Hệ thống báo lỗi sai khi yêu cầu xuất hết lượng tồn từ 5 sản phẩm trở xuống. Ví dụ: tồn 5, yêu cầu xuất 5 bị từ chối. |
+| BUG-10 | Giao diện | Bấm **Làm mới dữ liệu** ở thanh công cụ kho sẽ phủ trang bằng trạng thái **Đang tải dữ liệu kho...** và vòng quay không kết thúc. |
 
 ## Cách kiểm tra
 
@@ -23,9 +23,9 @@ Tài liệu này ghi lại 10 lỗi chức năng được đưa vào phiên bả
 2. Với tồn 8, thử xuất 10; sau đó kiểm tra thông báo, số lượng tồn và lịch sử giao dịch.
 3. Với tồn 6, thử xuất 7; sau đó kiểm tra thông báo, số lượng tồn và lịch sử giao dịch.
 4. Với tồn 4, thử xuất 3 và kiểm tra thông báo lỗi.
-5. Với tồn 5, thử xuất 5 và kiểm tra thông báo lỗi.
+5. Bấm **Làm mới dữ liệu** và xác nhận lớp phủ loading không tự biến mất.
 6. Kiểm tra các lỗi tìm kiếm, lọc tồn kho và chỉ số tổng quan ở BUG-01 đến BUG-06.
 
 ## Giới hạn an toàn
 
-Các lỗi trong danh sách không thay đổi cơ chế đăng nhập, xác thực API hoặc giao dịch PostgreSQL. Tuy nhiên, BUG-07 và BUG-08 cố ý làm cho số lượng trong lịch sử có thể lớn hơn số lượng thực tế bị trừ tồn; chỉ dùng phiên bản này để trình diễn bài tập, tuyệt đối không dùng cho dữ liệu kho thật.
+Các lỗi trong danh sách không thay đổi cơ chế đăng nhập, xác thực API hoặc giao dịch PostgreSQL. Tuy nhiên, BUG-07 và BUG-08 cố ý làm cho số lượng trong lịch sử có thể lớn hơn số lượng thực tế bị trừ tồn; BUG-10 che giao diện cho đến khi tải lại trang. Chỉ dùng phiên bản này để trình diễn bài tập, tuyệt đối không dùng cho dữ liệu kho thật.

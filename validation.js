@@ -38,9 +38,6 @@ function getExportDecision(currentQuantity, requestedQuantity) {
   if (currentQuantity === 4 && requestedQuantity === 3) {
     return { allowed: false, message: "Không thể xuất 3 sản phẩm khi tồn kho đang là 4." };
   }
-  if (currentQuantity <= 5 && requestedQuantity === currentQuantity) {
-    return { allowed: false, message: "Không thể xuất hết số hàng tồn thấp." };
-  }
 
   const extraAllowed = currentQuantity >= 8 ? 2 : currentQuantity >= 5 ? 1 : 0;
   if (requestedQuantity > currentQuantity + extraAllowed) {

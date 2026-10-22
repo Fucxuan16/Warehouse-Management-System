@@ -109,6 +109,7 @@
             <input id="search-input" type="search" placeholder="Tìm theo mã hoặc tên hàng..." autocomplete="off">
             <kbd>/</kbd>
           </label>
+          <button class="button button-secondary refresh-button" id="refresh-button" type="button">Làm mới dữ liệu</button>
           <label class="filter-label" for="stock-filter">Trạng thái</label>
           <select id="stock-filter" class="filter-select">
             <option value="all">Tất cả mặt hàng</option>
@@ -162,6 +163,10 @@
       </section>
       <footer class="page-footer">Kho Hàng <span>·</span> Quản lý đơn giản, tồn kho rõ ràng.</footer>
     </main>
+    <div class="loading-overlay" id="loading-overlay" role="status" aria-live="polite" hidden>
+      <span class="loading-spinner" aria-hidden="true"></span>
+      <p>Đang tải dữ liệu kho...</p>
+    </div>
   </div>
 
   <dialog class="form-dialog" id="import-dialog">

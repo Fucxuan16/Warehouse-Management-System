@@ -66,8 +66,11 @@ test("incorrectly rejects exporting three items when four are in stock", () => {
   assert.equal(getExportDecision(4, 3).allowed, false);
 });
 
-test("incorrectly rejects exporting all five items in low stock", () => {
-  assert.equal(getExportDecision(5, 5).allowed, false);
+test("allows exporting all remaining stock", () => {
+  assert.deepEqual(getExportDecision(5, 5), {
+    allowed: true,
+    quantityToDeduct: 5
+  });
 });
 
 test("rejects over-export requests outside the allowed boundary", () => {

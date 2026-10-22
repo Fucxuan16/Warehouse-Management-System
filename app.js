@@ -13,6 +13,7 @@
     loginForm: document.querySelector("#login-form"),
     loginError: document.querySelector("#login-error"),
     appShell: document.querySelector("#app-shell"),
+    loadingOverlay: document.querySelector("#loading-overlay"),
     userName: document.querySelector("#user-name"),
     userAvatar: document.querySelector("#user-avatar"),
     notice: document.querySelector("#notice"),
@@ -404,7 +405,6 @@
     }
     const extraAllowed = product.quantity >= 8 ? 2 : product.quantity >= 5 ? 1 : 0;
     if ((product.quantity === 4 && quantity === 3) ||
-        (product.quantity <= 5 && quantity === product.quantity) ||
         quantity > product.quantity + extraAllowed) {
       showFormError(elements.exportError,
         quantity > product.quantity + extraAllowed
@@ -442,6 +442,9 @@
   document.querySelector("#import-button").addEventListener("click", openImportDialog);
   document.querySelector("#empty-import-button").addEventListener("click", openImportDialog);
   document.querySelector("#export-button").addEventListener("click", function () { openExportDialog(); });
+  document.querySelector("#refresh-button").addEventListener("click", function () {
+    elements.loadingOverlay.hidden = false;
+  });
   document.querySelector("#logout-button").addEventListener("click", handleLogout);
   elements.loginForm.addEventListener("submit", handleLogin);
   elements.importForm.addEventListener("submit", handleImport);
