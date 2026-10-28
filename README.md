@@ -1,6 +1,7 @@
 # Hệ thống quản lý kho
 
 Ứng dụng web động cho phép nhiều tài khoản đăng nhập vào cùng một kho. Giao diện được phục vụ bởi Node.js/Express; hàng hóa, lịch sử nhập/xuất và phiên đăng nhập được lưu trong PostgreSQL.
+
 Web deploy: https://warehouse-management-system-gumv.onrender.com/
 
 Tài khoản tester: User:admin; Password:quanlykhohang
